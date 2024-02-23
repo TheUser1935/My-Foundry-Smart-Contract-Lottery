@@ -1,4 +1,41 @@
 // SPDX-License-Identifier: MIT
+
+/*
+Contract elements should be laid out in the following order:
+1. Pragma statements
+2. Import statements
+3. Events
+4. Errors
+5. Interfaces
+6. Libraries
+7. Contracts
+
+Inside each contract, library or interface, use the following order:
+1. Type declarations
+2. State variables
+3. Events
+4. Errors
+5. Modifiers
+6. Functions
+
+Functions should be grouped according to their visibility and ordered:
+1. constructor
+2. receive function (if exists)
+3. fallback function (if exists)
+4. external
+5. public
+6. internal
+7. private
+
+The modifier order for a function should be:
+1. Visibility
+2. Mutability
+3. Virtual
+4. Override
+5. Custom modifiers
+
+*/
+
 pragma solidity ^0.8.18;
 
 /** @title Raffle
@@ -9,21 +46,58 @@ pragma solidity ^0.8.18;
 
 
 contract Raffle {
-
     uint256 private immutable i_entranceFee;
+    //@dev Duration of the lottery in seconds
+    uint256 private immutable i_interval;
+    address payable[] s_players;
+    uint256 private s_lastTimeStamp;
 
-    constructor(uint256 entranceFee){
+    //Events can have up to 3 indexed parameters - indexed paramters AKA Topics
+            //Indexed Params are searchable
+    event RafflePickedWinner(uint256 indexed winner);
+    event EnteredRaffle(address indexed player);
 
+    //Custom error to use when not enough ETH sent
+    error Raffle_NotEnoughETHSent();
+
+    constructor(uint256 entranceFee, uint256 interval) {
         i_entranceFee = entranceFee;
+        i_interval = interval;
+        //Set the last time stamp upon deploying the contract
+        s_lastTimeStamp = block.timestamp;
     }
 
 
-    function enterRaffle() public payable {
+    function enterRaffle() external payable {
+        // require() is LESS gas efficient than a custom error, therefore, should use revert and custom errors
+        //require(msg.value >= i_entranceFee, "Not enough ETH sent");
+        if(msg.value < i_entranceFee) {
+            revert Raffle_NotEnoughETHSent();
+        }
+        s_players.push(payable(msg.sender));
+
+        /*Rule of thumb: Whenever make a storage update, we should emit an event (about to learn about these for the first time!)
+        2 main reasons for events:
+            1. Makes mitigation/updating easier
+            2. Makes front end 'indexing' easier
+        */
+        emit EnteredRaffle(msg.sender);
+
 
     }
 
-
-    function pickWinner() public {
+    /**GOALS FOR FUNCTION
+    1. Get a random number
+    2. Use the random number to pick a player
+    3. Be automatically called by the contract
+    */
+    function pickWinner() external {
+        //Check to see if enough time has passed since last lottery
+        //Get current time
+        if(block.timestamp - s_lastTimeStamp < i_interval) {
+            //Revert - Not enough time has passed
+            revert();
+        }
 
     }
 
