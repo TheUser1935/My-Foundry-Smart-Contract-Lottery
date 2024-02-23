@@ -1,4 +1,25 @@
-# Foundry
+# Cyfrin Course
+
+# Smart Contract Lottery
+
+## About
+
+This is my version of the smart contract lottery that is covered in the Cyfrin Updraft Learning Platform. It contains plenty of comments that I use to aide my understanding and is not an accurate representaiton of industry standard - this is my learning journey.
+
+## Goals of the smart contract lottery
+
+1. Users can enter by paying for a ticket
+   1. The ticket fees are going to go to the winner of the draw
+2. After X period of time, the lottery will automatically draw a winner
+   1. This is will be done programatically
+3. Project will use Chainlink VRF & Chainlink automation for two purposes:
+   1. Chainlink VRF - used for randomness
+   2. Chainlink automation - used for time based trigger
+
+
+
+
+# Foundry Information
 
 **Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
 
