@@ -44,11 +44,20 @@ pragma solidity ^0.8.18;
  *  @dev The Raffle contract implements Chainlink VRF v2
 */
 
+import{VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+
 
 contract Raffle {
+    uint256 private constant REQUEST_CONFIRMATIONS = 3;
+    uint256 private constant NUMBER_OF_WORDS = 1;
+
     uint256 private immutable i_entranceFee;
     //@dev Duration of the lottery in seconds
     uint256 private immutable i_interval;
+    address private immutable i_vrfCoordinator;
+    bytes32 private immutable i_gasLane;
+    uint64 private immutable i_subscriptionId;
+    uint32 private immutable i_callbackGasLimit;
     address payable[] s_players;
     uint256 private s_lastTimeStamp;
 
@@ -60,9 +69,20 @@ contract Raffle {
     //Custom error to use when not enough ETH sent
     error Raffle_NotEnoughETHSent();
 
-    constructor(uint256 entranceFee, uint256 interval) {
+    constructor(
+        uint256 entranceFee, 
+        uint256 interval, 
+        address vrfCoordinator, 
+        bytes32 gasLane, 
+        uint64 subscriptionId,
+        uint32 callbackGasLimit
+    ) {
         i_entranceFee = entranceFee;
         i_interval = interval;
+        i_vrfCoordinator = vrfCoordinator;
+        i_gasLane = gasLane;
+        i_subscriptionId = subscriptionId;
+        i_callbackGasLimit = callbackGasLimit;
         //Set the last time stamp upon deploying the contract
         s_lastTimeStamp = block.timestamp;
     }
@@ -98,6 +118,19 @@ contract Raffle {
             //Revert - Not enough time has passed
             revert();
         }
+
+        /* Getting a random number to pick a winner is a 2 step process
+        1. Request the random number
+        2. Get the random number from the Chainlink VRF data
+        */
+        // Will revert if subscription is not set and funded.
+        uint256 requestId = i_vrfCoordinator.requestRandomWords(
+            i_gasLane, //gas lane
+            i_subscriptionId, //id from subcrisption in chainlink
+            REQUEST_CONFIRMATIONS, //num of blocks to wait for confirmation
+            i_callbackGasLimit, //Gas limit for callback
+            NUMBER_OF_WORDS //num of random numbers to return
+        );
 
     }
 

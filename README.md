@@ -17,6 +17,16 @@ This is my version of the smart contract lottery that is covered in the Cyfrin U
    2. Chainlink automation - used for time based trigger
 
 
+# Chainlink Dependencies
+
+### Chainlink Repos
+
+Project uses the brownie contracts kit provided by chainlink. The brownie contracts are smaller that the standard smartcontractkit repo
+
+### To install from Terminal run the following (updating the @version as required)
+``` shell
+$ forge install smartcontractkit/chainlink-brownie-contracts@0.8.0 --no-commit
+```
 
 
 # Foundry Information
