@@ -1,6 +1,6 @@
 -include .env
 
-fb:;	forge build
+fb :;	forge build
 
 ft :; forge test 
 
