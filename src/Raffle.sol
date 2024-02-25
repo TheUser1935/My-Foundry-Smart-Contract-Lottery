@@ -44,10 +44,16 @@ pragma solidity ^0.8.18;
  *  @dev The Raffle contract implements Chainlink VRF v2
 */
 
-import{VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2.sol";
+/*@note I HAVE WASTED HOURS TRYING TO RESOLVE PATH ISSUES RELATED TO JUAN BLANCO EXTENSION THAT LED TO ME CAUSIONG ISSUES WITH FORGE REMAPPINGS. SOMEHOW EVEN THOUGH MY REMAPPINGS IS CORRECT IT FAILS TO COMPILE. I'VE HAD IT, I'M USING THIS PATH SO I CAN ATLEAST KEEP LEARNING!!!*/
+import {VRFCoordinatorV2Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/VRFCoordinatorV2.sol";
+
+/*@note The VRFConsumerBaseV2 contract is an abstract contract, therfore this Raffle contract must inherit from it and become 'is' VRFConsumerBaseV2
+We must be careful when inheriting from an abstract contract to understand what i contains and what params for the constructor it may have.
+If what this contract 'is' has params in the inheritance it must be in the constructor of this contract*/
+import {VRFConsumerBaseV2} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
 
-contract Raffle {
+contract Raffle is VRFConsumerBaseV2 {
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUMBER_OF_WORDS = 1;
 
@@ -69,14 +75,15 @@ contract Raffle {
     //Custom error to use when not enough ETH sent
     error Raffle_NotEnoughETHSent();
 
+    /*@note notice how we are inheriting from VRFConsumerBaseV2 and have it as part of our constructor, however, because we are inherritting it it is ouside the params but before the contents of what we do in the constructor. The VRFConsumerBaseV2 requires the address of the VRFCoordinatorV2Interface - which is part of our constructor*/
     constructor(
         uint256 entranceFee, 
         uint256 interval, 
         address vrfCoordinator, 
         bytes32 gasLane, 
         uint64 subscriptionId,
-        uint32 callbackGasLimit
-    ) {
+        uint32 callbackGasLimit        
+    ) VRFConsumerBaseV2(vrfCoordinator){
         i_entranceFee = entranceFee;
         i_interval = interval;
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinator);
@@ -87,7 +94,7 @@ contract Raffle {
         s_lastTimeStamp = block.timestamp;
     }
 
-
+    
     function enterRaffle() external payable {
         // require() is LESS gas efficient than a custom error, therefore, should use revert and custom errors
         //require(msg.value >= i_entranceFee, "Not enough ETH sent");
@@ -133,6 +140,13 @@ contract Raffle {
         );
 
     }
+
+    /*@note override keyword forces this to be the function with this name that we want to use, disregarding what was inherrited -in this case inherrited from VRFConsumerBaseV2*/
+
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal override {}
 
 
 

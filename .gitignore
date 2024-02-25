@@ -20,4 +20,4 @@ lib/chainlink-brownie-contracts/
 lib/foundry-devops/
 
 #config file
-fonudry.toml
+#foundry.toml
