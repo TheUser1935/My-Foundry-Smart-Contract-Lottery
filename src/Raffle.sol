@@ -44,7 +44,7 @@ pragma solidity ^0.8.18;
  *  @dev The Raffle contract implements Chainlink VRF v2
 */
 
-import{VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import{VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2.sol";
 
 
 contract Raffle {
