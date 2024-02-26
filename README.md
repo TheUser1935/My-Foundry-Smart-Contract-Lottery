@@ -16,7 +16,6 @@ This is my version of the smart contract lottery that is covered in the Cyfrin U
    1. Chainlink VRF - used for randomness
    2. Chainlink automation - used for time based trigger
 
-
 # Chainlink Dependencies
 
 ### Chainlink Repos
@@ -24,10 +23,10 @@ This is my version of the smart contract lottery that is covered in the Cyfrin U
 Project uses the brownie contracts kit provided by chainlink. The brownie contracts are smaller that the standard smartcontractkit repo
 
 ### To install from Terminal run the following (updating the @version as required)
-``` shell
+
+```shell
 $ forge install smartcontractkit/chainlink-brownie-contracts@0.8.0 --no-commit
 ```
-
 
 # Foundry Information
 
@@ -35,14 +34,15 @@ $ forge install smartcontractkit/chainlink-brownie-contracts@0.8.0 --no-commit
 
 Foundry consists of:
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
+- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
+- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
+- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
 
-  ## ENVIRONMENT VARIABLES
+## ENVIRONMENT VARIABLES
 
 ### FROM TERMINAL, WE WANT FORGE TO REFER TO OUR .ENV FILE. TO DO THIS:
+
 ```shell
 $ source .env
 ```
@@ -113,7 +113,6 @@ $ cast sig "functionName()"
 $ cast --calldata-decode "functionName()" HexString(e.g.2a4d5b etc etc)
 ```
 
-
 ### Help
 
 ```shell
@@ -122,6 +121,80 @@ $ anvil --help
 $ cast --help
 ```
 
+## Solidity Dev Tips
+
+### Call Command and Revert
+
+This is a lower level command is able to call just about any function without needing an ABI, for now just going to focus on sending ETH
+
+Call is also the reccomended method currently for sending value
+The ("") is used to type in a function name that we might want to call, not useful for this though
+We always see that "Value" exists on the L side of Remix - this is what we want
+This line returns 2 variables - bool (success), bytes (data returned)
+We don't care about the bytes though in this example, so we leave it blank
+
+Have to ways of verifying the call command:
+
+1.  require statement
+2.  if statement
+    Preferred method at this time is using if statements due to ability to gas efficiencies that can be achieved and can use custom errors (e.g. custom error called Raffle_TransferToWinnerFailed)
+
+```shell
+(bool success, ) = payable(msg.sender).call{
+   value: address(this).balance
+}("");
+if (!success) {
+   revert Raffle_TransferToWinnerFailed();
+}
+require(callSuccess, "Call failed");
+```
+
+### Enum Types
+
+Enums can be used to create custom types with finite set of 'constant values'
+
+Enums are one way to create a user-defined type in Solidity. They are explicitly convertible to and from all integer types but implicit conversion is not allowed. The explicit conversion from integer checks at runtime that the value lies inside the range of the enum and causes a Panic error otherwise. Enums require at least one member, and its default value when declared is the first member. Enums cannot have more than 256 members. Each constant supplied is mapped to an index integer, beginning from zero
+
+Using type(NameOfEnum).min and type(NameOfEnum).max you can get the smallest and respectively largest value of the given enum
+
+```shell
+
+enum State {
+   Created, //0
+   Locked, //1
+   Inactive //2
+} // Enum
+
+enum ActionChoices { GoLeft, GoRight, GoStraight, SitStill }
+
+ActionChoices choice;
+ActionChoices constant defaultChoice = ActionChoices.GoStraight;
+
+function setGoStraight() public {
+   choice = ActionChoices.GoStraight;
+}
+
+// Since enum types are not part of the ABI, the signature of "getChoice"
+// will automatically be changed to "getChoice() returns (uint8)"
+// for all matters external to Solidity.
+function getChoice() public view returns (ActionChoices) {
+   return choice;
+}
+
+function getDefaultChoice() public pure returns (uint) {
+   return uint(defaultChoice);
+}
+
+function getLargestValue() public pure returns (ActionChoices) {
+   return type(ActionChoices).max;
+}
+
+function getSmallestValue() public pure returns (ActionChoices) {
+   return type(ActionChoices).min;
+}
+
+
+```
 
 ## Development
 

@@ -54,9 +54,22 @@ import {VRFConsumerBaseV2} from "lib/chainlink-brownie-contracts/contracts/src/v
 
 
 contract Raffle is VRFConsumerBaseV2 {
+
+    //Type declarations (includes enums)
+    /*@note Enums allow us to create our own type of something and assign constants to that type. In our case, we want to create an enum for the state of the raffle which will help us in controlling any interactions with our contracts by having the ability to use our custom enum type to set the state that the raffle contract is in. 
+    Remember each constant in an enum has an index beginning from zero
+    For further info and demo, look at the README.md
+    */
+    enum RaffleState {
+        OPEN,              //index 0
+        CALCULATING_WINNER //index 1
+        }
+
+    //Constants
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUMBER_OF_WORDS = 1;
 
+    //immutable variables
     uint256 private immutable i_entranceFee;
     //@dev Duration of the lottery in seconds
     uint256 private immutable i_interval;
@@ -64,8 +77,11 @@ contract Raffle is VRFConsumerBaseV2 {
     bytes32 private immutable i_gasLane;
     uint64 private immutable i_subscriptionId;
     uint32 private immutable i_callbackGasLimit;
+    //storage variables
     address payable[] s_players;
     uint256 private s_lastTimeStamp;
+    address private s_lastWinner;
+    RaffleState private s_raffleState;
 
     //Events can have up to 3 indexed parameters - indexed paramters AKA Topics
             //Indexed Params are searchable
@@ -74,6 +90,10 @@ contract Raffle is VRFConsumerBaseV2 {
 
     //Custom error to use when not enough ETH sent
     error Raffle_NotEnoughETHSent();
+    //Transfer to winner failed
+    error Raffle_TransferToWinnerFailed();
+    //Raffle not open (enum state)
+    error Raffle_RaffleNotOpen();
 
     /*@note notice how we are inheriting from VRFConsumerBaseV2 and have it as part of our constructor, however, because we are inherritting it it is ouside the params but before the contents of what we do in the constructor. The VRFConsumerBaseV2 requires the address of the VRFCoordinatorV2Interface - which is part of our constructor*/
     constructor(
@@ -92,6 +112,8 @@ contract Raffle is VRFConsumerBaseV2 {
         i_callbackGasLimit = callbackGasLimit;
         //Set the last time stamp upon deploying the contract
         s_lastTimeStamp = block.timestamp;
+        //Set the default state of the raffle at construct
+        s_raffleState = RaffleState.OPEN;
     }
 
     
@@ -101,6 +123,10 @@ contract Raffle is VRFConsumerBaseV2 {
         if(msg.value < i_entranceFee) {
             revert Raffle_NotEnoughETHSent();
         }
+        if (s_raffleState != RaffleState.OPEN) {
+            revert Raffle_RaffleNotOpen();
+        }
+
         s_players.push(payable(msg.sender));
 
         /*Rule of thumb: Whenever make a storage update, we should emit an event (about to learn about these for the first time!)
@@ -125,6 +151,8 @@ contract Raffle is VRFConsumerBaseV2 {
             //Revert - Not enough time has passed
             revert();
         }
+        //Set the state of the Raffle contract to calculating the winner to prevent users from entering the raffle again while we pick the winner
+        s_raffleState = RaffleState.CALCULATING_WINNER;
 
         /* Getting a random number to pick a winner is a 2 step process
         1. Request the random number
@@ -146,7 +174,54 @@ contract Raffle is VRFConsumerBaseV2 {
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] memory randomWords
-    ) internal override {}
+    ) internal override {
+        /*@note modulo function (%) works by thinking of the syntax as how many times can the RIGHT side number go into the LEFT side number, then the remainder is the result of the modulo operation. The RIGHT side number sets the maximum number that can be the result of the modulo operation
+        e.g. 10 % 5 = 0 ------> 5 goes into 10 2 times with a remainder of 0
+        e.g. 11 % 5 = 1 ------> 5 goes into 11 2 times with a remainder of 1
+        We can use the length of our storage array to get the index of the winner by uisng the length of the array as the RIGHT side number to set the highest number that can be the result of the modulo operation - so in this case we dont exceed the array length
+        */
+        uint256 indexOfWinner = randomWords[0] % s_players.length;
+
+        //Use the index to set the winner
+        address payable winner = s_players[indexOfWinner];
+        //Store last winner
+        s_lastWinner = winner;
+
+        //Reset the players array prior to opening the raffle again to prevent users accidentally entering the raffle before being reset
+        s_players = new address payable[](0);
+
+        //Set last time stamp to be used for duration of next raffle
+        s_lastTimeStamp = block.timestamp;
+
+        //Set the state of the Raffle contract to open to allow users to enter lottery again
+        s_raffleState = RaffleState.OPEN;
+
+        //Pay winner
+        /*@note This is a lower level command is able to call just about any function without needing an ABI, for now just going to focus on sending ETH.
+
+        Call is also the reccomended method currently for sending value
+        The ("") is used to type in a function name that we might want to call, not useful for this though
+        We always see that "Value" exists on the L side of Remix - this is what we want
+        This line returns 2 variables - bool (success), bytes (data returned)
+        We don't care about the bytes though in this example, so we leave it blank
+
+        Have to ways of verifying the call command:
+            1. require statement
+            2. if statement
+        Preferred method at this time is using if statements due to ability to gas efficiencies that can be achieved and can use custom errors (e.g. custom error called Raffle_TransferToWinnerFailed)
+        */
+        
+        (bool success, ) = winner.call{value: address(this).balance}("");
+        if (!success) {
+            revert Raffle_TransferToWinnerFailed();
+        }
+
+        //Emit that we have picked a winner
+        emit PickedWinner(winner);
+        
+       
+        
+    }
 
 
 
