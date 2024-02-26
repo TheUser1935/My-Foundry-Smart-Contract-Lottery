@@ -85,7 +85,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
     //Events can have up to 3 indexed parameters - indexed paramters AKA Topics
             //Indexed Params are searchable
-    event RafflePickedWinner(uint256 indexed winner);
+    event RafflePickedWinner(address indexed winner);
     event EnteredRaffle(address indexed player);
 
     //Custom error to use when not enough ETH sent
@@ -94,6 +94,8 @@ contract Raffle is VRFConsumerBaseV2 {
     error Raffle_TransferToWinnerFailed();
     //Raffle not open (enum state)
     error Raffle_RaffleNotOpen();
+    //Upkeep not needed (FALSE value returned)
+    error Raffle_UpKeepNotNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);
 
     /*@note notice how we are inheriting from VRFConsumerBaseV2 and have it as part of our constructor, however, because we are inherritting it it is ouside the params but before the contents of what we do in the constructor. The VRFConsumerBaseV2 requires the address of the VRFCoordinatorV2Interface - which is part of our constructor*/
     constructor(
@@ -140,19 +142,46 @@ contract Raffle is VRFConsumerBaseV2 {
 
     }
 
+    /*@note Following UpKeep functions taken from Chainlink Automation Docs and slightly modified
+    How do we use this checkUpKeep function?
+    - This checkUpKeep function will be called from the Chainlink Automation Node. It will give us a boolean value to know if we need to perform something -> in our case, if the raffle is ready to pick a winner
+    For this function to retunr a TRUE boolean, the following must be true:
+    1. Time interval has passed between raffle draws
+    2. The raffle is in OPEN state
+    3. The raffle has ETH, meaning that there are players in the raffle
+    4. We have our Chainlink Automation subscription connected to a wallet and there is enough LINK in our connected wallet
+
+    @note if function requires param that we wont use, we can wrap it in multi-line comment markers to ignore it
+    We don't use the checkData in this example. The checkData is defined when the Upkeep was registered.*/
+
+    function checkUpkeep(bytes memory /* checkData */) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
+        bool intervalHasPassed = (block.timestamp - s_lastTimeStamp) >= i_interval;
+        bool raffleIsOpen = (s_raffleState == RaffleState.OPEN);
+        bool raffleHasPlayers = s_players.length > 0;
+        bool haveETH = address(this).balance > 0;
+        upkeepNeeded = (intervalHasPassed && raffleIsOpen && raffleHasPlayers && haveETH);
+        
+        return(upkeepNeeded,"0x0");
+    }
+
     /**GOALS FOR FUNCTION
     1. Get a random number
     2. Use the random number to pick a player
     3. Be automatically called by the contract
     */
-    function pickWinner() external {
+    function performUpkeep(bytes calldata /* performData */) external {
         //---------CHECKS-----------
         //Check to see if enough time has passed since last lottery
-        //Get current time
-        if(block.timestamp - s_lastTimeStamp < i_interval) {
-            //Revert - Not enough time has passed
-            revert();
+        (bool upKeepNeeded,) = checkUpkeep("");
+        if(!upKeepNeeded) {
+            //Provide some info that will help with debugging when reverting
+            revert Raffle_UpKeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
         }
+        
         //---------EFFECTS-----------
         //Set the state of the Raffle contract to calculating the winner to prevent users from entering the raffle again while we pick the winner
         s_raffleState = RaffleState.CALCULATING_WINNER;
@@ -197,7 +226,7 @@ contract Raffle is VRFConsumerBaseV2 {
         s_lastWinner = winner;
 
         //Emit that we have picked a winner
-        emit PickedWinner(winner);
+        emit RafflePickedWinner(winner);
 
         //Reset the players array prior to opening the raffle again to prevent users accidentally entering the raffle before being reset
         s_players = new address payable[](0);
@@ -210,7 +239,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
 
         //---------INTERACTIONS-----------
-        
+
         //Pay winner
         /*@note This is a lower level command is able to call just about any function without needing an ABI, for now just going to focus on sending ETH.
 
