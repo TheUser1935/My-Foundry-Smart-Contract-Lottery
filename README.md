@@ -16,6 +16,14 @@ This is my version of the smart contract lottery that is covered in the Cyfrin U
    1. Chainlink VRF - used for randomness
    2. Chainlink automation - used for time based trigger
 
+# Design Principles
+
+1.  In functions, use CEI: Checks, Effects, Interactions
+    1.  Checks - require statements, if -> error statements
+    2.  Effects - Effects on OWN contract
+    3.  Interactions - Other contracts
+2.  Adhere to Solidity Style Guide as much as possible
+
 # Chainlink Dependencies
 
 ### Chainlink Repos

@@ -118,6 +118,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
     
     function enterRaffle() external payable {
+        //---------CHECKS-----------
         // require() is LESS gas efficient than a custom error, therefore, should use revert and custom errors
         //require(msg.value >= i_entranceFee, "Not enough ETH sent");
         if(msg.value < i_entranceFee) {
@@ -126,7 +127,7 @@ contract Raffle is VRFConsumerBaseV2 {
         if (s_raffleState != RaffleState.OPEN) {
             revert Raffle_RaffleNotOpen();
         }
-
+        //---------EFFECTS-----------
         s_players.push(payable(msg.sender));
 
         /*Rule of thumb: Whenever make a storage update, we should emit an event (about to learn about these for the first time!)
@@ -145,19 +146,23 @@ contract Raffle is VRFConsumerBaseV2 {
     3. Be automatically called by the contract
     */
     function pickWinner() external {
+        //---------CHECKS-----------
         //Check to see if enough time has passed since last lottery
         //Get current time
         if(block.timestamp - s_lastTimeStamp < i_interval) {
             //Revert - Not enough time has passed
             revert();
         }
+        //---------EFFECTS-----------
         //Set the state of the Raffle contract to calculating the winner to prevent users from entering the raffle again while we pick the winner
         s_raffleState = RaffleState.CALCULATING_WINNER;
 
+        //---------INTERACTIONS-----------
         /* Getting a random number to pick a winner is a 2 step process
         1. Request the random number
         2. Get the random number from the Chainlink VRF data
         */
+
         // Will revert if subscription is not set and funded.
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane, //gas lane
@@ -175,6 +180,10 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 requestId,
         uint256[] memory randomWords
     ) internal override {
+        //---------CHECKS-----------
+
+        //---------EFFECTS-----------
+
         /*@note modulo function (%) works by thinking of the syntax as how many times can the RIGHT side number go into the LEFT side number, then the remainder is the result of the modulo operation. The RIGHT side number sets the maximum number that can be the result of the modulo operation
         e.g. 10 % 5 = 0 ------> 5 goes into 10 2 times with a remainder of 0
         e.g. 11 % 5 = 1 ------> 5 goes into 11 2 times with a remainder of 1
@@ -187,6 +196,9 @@ contract Raffle is VRFConsumerBaseV2 {
         //Store last winner
         s_lastWinner = winner;
 
+        //Emit that we have picked a winner
+        emit PickedWinner(winner);
+
         //Reset the players array prior to opening the raffle again to prevent users accidentally entering the raffle before being reset
         s_players = new address payable[](0);
 
@@ -196,6 +208,9 @@ contract Raffle is VRFConsumerBaseV2 {
         //Set the state of the Raffle contract to open to allow users to enter lottery again
         s_raffleState = RaffleState.OPEN;
 
+
+        //---------INTERACTIONS-----------
+        
         //Pay winner
         /*@note This is a lower level command is able to call just about any function without needing an ABI, for now just going to focus on sending ETH.
 
@@ -215,11 +230,6 @@ contract Raffle is VRFConsumerBaseV2 {
         if (!success) {
             revert Raffle_TransferToWinnerFailed();
         }
-
-        //Emit that we have picked a winner
-        emit PickedWinner(winner);
-        
-       
         
     }
 
