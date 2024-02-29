@@ -3,5 +3,7 @@
   "editor.tokenColorCustomizations": {
     "comments": "",
     "textMateRules": []
-  }
+  },
+  "solidity-va.diagnostics.cdili_json.import": false,
+  "solidity-va.parser.parseImports": true
 }

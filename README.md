@@ -207,3 +207,14 @@ function getSmallestValue() public pure returns (ActionChoices) {
 ## Development
 
 This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
+
+## Tests
+
+### Components for testing
+
+1. Deploy Script to be able to deploy our contract to various chains
+2. Tests that are compatible across different chains
+3. Chains to test on:
+   1. Local (anvil and ganache)
+   2. Forked testnet (Sepolia)
+   3. Forked Mainnet

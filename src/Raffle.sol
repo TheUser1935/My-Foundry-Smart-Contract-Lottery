@@ -204,7 +204,6 @@ contract Raffle is VRFConsumerBaseV2 {
     }
 
     /*@note override keyword forces this to be the function with this name that we want to use, disregarding what was inherrited -in this case inherrited from VRFConsumerBaseV2*/
-
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] memory randomWords
