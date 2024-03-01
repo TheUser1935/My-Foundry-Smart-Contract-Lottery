@@ -36,6 +36,12 @@ The modifier order for a function should be:
 
 */
 
+/** @dev Function statement order - CEI:
+1. Checks
+2. Effects - on own contract/state
+3. Interactions - interactions with other contracts
+*/
+
 pragma solidity ^0.8.18;
 
 /** @title Raffle
@@ -267,6 +273,10 @@ contract Raffle is VRFConsumerBaseV2 {
     
     function getTicketPrice() public view returns(uint256){
         return i_entranceFee;
+    }
+
+    function getRaffleState() public view returns(RaffleState){
+        return s_raffleState;
     }
 
 }

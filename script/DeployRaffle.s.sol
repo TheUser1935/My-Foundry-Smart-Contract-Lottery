@@ -22,14 +22,44 @@ pragma solidity ^0.8.18;
     - uint32 callbackGasLimit
 */
 
+/** @dev Function statement order - CEI:
+1. Checks
+2. Effects - on own contract/state
+3. Interactions - interactions with other contracts
+*/
+
+/*@note will build out logic to handle subscription Id, as of 7pm 01/03/24 have not built this logic out */
+
 import {Script} from "lib/forge-std/src/Script.sol";
 import {Raffle} from "src/Raffle.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 
 contract DeployRaffle is Script {
 
-    function run() external returns (Raffle) {
+    function run() external returns (Raffle, HelperConfig) {
         //Get the network config
         HelperConfig hc = new HelperConfig();
+
+        (
+        uint256 entranceFee, 
+        uint256 interval,
+        address vrfCoordinator, 
+        bytes32 gasLane,
+        uint64 subscriptionId,
+        uint32 callbackGasLimit
+        ) = hc.activeNetworkConfig();
+
+        //Start broadcast to deploy Raffle contract
+        vm.startBroadcast();
+
+        Raffle deployedRaffle = new Raffle(entranceFee, interval, vrfCoordinator, gasLane, subscriptionId, callbackGasLimit);
+
+        vm.stopBroadcast();
+
+        return (deployedRaffle, hc);
     }
+
+    
+
+
 }
