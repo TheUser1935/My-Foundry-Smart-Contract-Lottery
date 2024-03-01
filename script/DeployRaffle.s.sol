@@ -33,6 +33,7 @@ pragma solidity ^0.8.18;
 import {Script} from "lib/forge-std/src/Script.sol";
 import {Raffle} from "src/Raffle.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
+import {CreateSubscription} from "script/interactions.s.sol";
 
 contract DeployRaffle is Script {
 
@@ -48,6 +49,11 @@ contract DeployRaffle is Script {
         uint64 subscriptionId,
         uint32 callbackGasLimit
         ) = hc.activeNetworkConfig();
+
+        if(subscriptionId == 0) {
+            CreateSubscription createSubscription = new CreateSubscription();
+            subscriptionId = createSubscription.createSubscription(vrfCoordinator);
+        }
 
         //Start broadcast to deploy Raffle contract
         vm.startBroadcast();
