@@ -24,6 +24,11 @@ This is my version of the smart contract lottery that is covered in the Cyfrin U
     3.  Interactions - Other contracts
 2.  Adhere to Solidity Style Guide as much as possible
 
+# Sepolia Etherscan Verified Deployements
+
+1. 02 MAR 24 ~10:00pm - Deployed Raffle contract as part of course work, project not yet complete. Successfully deployed Raffle project and integrated with Chainlink VRF by adding consumer to the Subscription ID supplied. Have created a chainlink automation Upkeep for the Raffle contract, as of 10:25pm there has been no automated upkeep performed.
+   - https://sepolia.etherscan.io/address/0x9f4495fff8a73c7fefd8aeb5bc772dc6c3f4af4b#code
+
 # Chainlink Dependencies
 
 ### Chainlink Repos
@@ -218,3 +223,24 @@ This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.
    1. Local (anvil and ganache)
    2. Forked testnet (Sepolia)
    3. Forked Mainnet
+
+### vm.recordLogs()
+
+vm.recordLogs(); is a cheatcode that tells the VM to start recording all the emitted events as bytes32. To access them, use getRecordedLogs
+------> this is handy in the situation where we want to test the emit but the result will be dynamic and not static, which is an issue for expectEmit process.
+------> This way is handy to capture the log output where can test the emit process
+
+vm.recordLogs() will create a special array that contains all the emitted events. To access the logs we need to:
+
+1.  import {Vm} from forge-std/Vm.sol
+2.  Vm.Log[] memory ARRAY_NAME = vm.getRecordedLogs();
+
+We can then access the recorded logs to find the emitted events we are after in our test. When we look for the emit value, we can pass in the value to match.
+-----> If there is multiple entries that feature the same name/value, it becomes important to understand the order in which the logs are emitted (index begins at zero)
+-----> In this contract, the VRFCoordinatorV2 emits requestId first, but we are trying to target the request id emmitted during performUpkeep
+
+### forge test --debug Function_Name
+
+--debug will open up a step through debugger window that can allow user to literally go opcode by opcode through the test. This allows granular examination of what is occuring during the test.
+
+It will be covered in greater detail later in the course.

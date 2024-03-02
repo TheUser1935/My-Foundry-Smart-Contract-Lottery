@@ -93,6 +93,7 @@ contract Raffle is VRFConsumerBaseV2 {
             //Indexed Params are searchable
     event RafflePickedWinner(address indexed winner);
     event EnteredRaffle(address indexed player);
+    event RequestedRaffleWinner(uint256 indexed requestId);
 
     //Custom error to use when not enough ETH sent
     error Raffle_NotEnoughETHSent();
@@ -207,11 +208,14 @@ contract Raffle is VRFConsumerBaseV2 {
             NUMBER_OF_WORDS //num of random numbers to return
         );
 
+
+        emit RequestedRaffleWinner(requestId);
+
     }
 
     /*@note override keyword forces this to be the function with this name that we want to use, disregarding what was inherrited -in this case inherrited from VRFConsumerBaseV2*/
     function fulfillRandomWords(
-        uint256 requestId,
+        uint256 /* requestId */,
         uint256[] memory randomWords
     ) internal override {
         //---------CHECKS-----------
@@ -281,6 +285,18 @@ contract Raffle is VRFConsumerBaseV2 {
 
     function getPlayer(uint256 indexOfPlayer) public view returns(address) {
         return s_players[indexOfPlayer];
+    }
+
+    function getRecentWinner() public view returns(address){
+        return s_lastWinner;
+    }
+
+    function getNumberOfPlayers() public view returns(uint256){
+        return s_players.length;
+    }
+
+    function getLastTimeStamp() public view returns(uint256){
+        return s_lastTimeStamp;
     }
 
 }
