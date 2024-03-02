@@ -24,6 +24,7 @@ contract TestRaffle is Test {
     bytes32 gasLane;
     uint64 subscriptionId;
     uint32 callbackGasLimit;
+    address linkToken;
 
     Raffle raffle;
     HelperConfig helperConfig;
@@ -49,7 +50,8 @@ contract TestRaffle is Test {
         vrfCoordinator, 
         gasLane,
         subscriptionId,
-        callbackGasLimit
+        callbackGasLimit,
+        linkToken
         ) = helperConfig.activeNetworkConfig();
 
 

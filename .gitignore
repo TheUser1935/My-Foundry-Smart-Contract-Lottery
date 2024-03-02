@@ -19,5 +19,8 @@ lib/chainlink-brownie-contracts/
 # Devops folder
 lib/foundry-devops/
 
+# solmate files
+lib/solmate/
+
 #config file
 #foundry.toml
